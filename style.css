@@ -1,0 +1,30 @@
+@charset "UTF-8";
+
+body {
+  font-family: sans-serif;
+  max-width: 48rem;
+  padding: 1rem;
+}
+
+table {
+  --border: 1px solid #999;
+  border-collapse: collapse;
+  border: var(--border);
+}
+
+caption {
+  margin-bottom: .3rem;
+}
+
+thead {
+  background-color: #ccc;
+}
+
+th, td {
+  padding: .5rem;
+  border: var(--border);
+}
+
+tr:nth-child(even) {
+  background-color: #eee;
+}
