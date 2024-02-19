@@ -31,6 +31,8 @@ audience is global. Here’s the strategy we’re going to use:
 * The front-end dev is going to automate the display of the time
   stamps to represent them unambiguously for each local reader.
 
+## The back-end dev
+
 The backend dev uses the available tool to write the time stamps:
 
 In Ruby:
@@ -67,9 +69,13 @@ The delivered HTML looks something like this:
     2024-02-09T04:34:22Z - Take out trash
     </pre>
 
+## The front-end dev
+
 The front-end dev will write JavaScript to scan the page text
 for these date stamps and then replace them with an unambiguous
 format for the local reader.
+
+### Add an event listener
 
 The front-end dev starts by adding a function to the page onload
 handler so the function `localizeIsoStrings(event)` runs
@@ -81,6 +87,8 @@ function localizeIsoStrings(event) {
 
 window.addEventListener("load", localizeIsoStrings);
 ```
+
+### Plan the mark-up
 
 We might grumble at the back-end dev for not wrapping
 each date stamp in a span to make each one easy to locate.
@@ -97,6 +105,8 @@ date stamp properly wrapped in a span element like this:
   title="2024-02-08T20:03:14Z"
   >Feb 8, 2024 at 08:03:14 PM PST</span>
 ```
+
+### Implement the mark-up plan
 
 Here’s a function that returns the structure:
 
@@ -125,6 +135,8 @@ This function
   readers.
 * Returns the `span` element.
 
+### Transformation, first version
+
 For the transformation, let’s start with an obvious solution:
 
 ```javascript
@@ -150,6 +162,8 @@ This function
 Turns out this is not going to do exactly what we need.
 The local time zone, which is critical for our solution is missing.
 We’ll use it as a placeholder for now and improve it later.
+
+### Finding and testing datetimes with a regular expression
 
 Now, clearly, we’re going to be scanning text for a particular text
 pattern. This can be a problem because the text we’re going to be
@@ -180,6 +194,8 @@ slashes that delineates the regular expression) to create a capture
 group. This capture group turns out to be essential for our purpose, and
 will become clear later on.
 
+### Find on page? It's not that simple
+
 Because I just now got a cold chill down my spine realizing that
 `querySelectorAll` does not have a polymorph that takes a regular
 expression.
@@ -195,6 +211,8 @@ The DOM does not have tools to exchange a portion of a text node
 with an element:
 
 
+
+### The driver function
 
 With trepidation, we return to the `localizeIsoStrings(event)` function.
 First, we know that we aren’t going to do anything with the event
@@ -214,6 +232,8 @@ tree. Unfortunately, although TreeWalker makes is easy to
 retrieve content from various places in your page, it doesn’t
 have good support for changing those pieces when you find them.
 
+### Walking the DOM
+
 So, we’ll roll our own walker. The typical pattern for this is
 to start with one element, get a list of its children, and process
 each child in turn. If any child has children of its own, recurse
@@ -232,6 +252,8 @@ function localizeIsoStrings(_event) {
 }
 ```
 
+#### Add the first guard clause
+
 Since we’re looking for text nodes and since text nodes never have child
 nodes, we know when can skip all childless nodes: No text there.
 
@@ -240,6 +262,8 @@ function nodeWalker(node) {
   if (!node.hasChildNodes()) return;
 }
 ```
+
+#### Add the regular expression, start the loop
 
 Next, we’ll set up our loop, and insert our regular expression
 before it——outside the loop——so we don’t waste time and memory
@@ -254,6 +278,8 @@ function nodeWalker(node) {
   }
 }
 ```
+
+#### Add more guard clauses
 
 And the first thing we want to do is to start another loop
 if the child is an element, which might itself contain text.
@@ -271,6 +297,8 @@ function nodeWalker(node) {
 }
 ```
 
+#### Process text nodes
+
 At this point, the child node is definitely a text node because, if it
 wasn’t, we’d have already left the loop. So we will get the text content
 of the text node:
@@ -278,6 +306,8 @@ of the text node:
 ```javascript
 child.textContent
 ```
+
+##### String.split()
 
 Now we split the string into an array of strings.
 We’ll split the string on the pattern of the datetime
@@ -318,6 +348,8 @@ that regular expression, we get an array of
 strings, with zero or more of the strings in the array
 exactly matching our datetime pattern.
 
+##### Process each segment in the split string
+
 The next step is to use the `map` method
 (of big data map/reduce fame) to evaluate each element
 in the array. If the string matches our datetime pattern,
@@ -325,6 +357,8 @@ then replace it with our replacement `span` element, else
 convert the string back into a text node. Now we have
 an array of nodes: zero or more are text nodes,
 and zero or more are `span` element nodes.
+
+##### Remove zero length text nodes
 
 A final optimization: Filter the resulting array
 to remove any text nodes where the length of the
@@ -337,6 +371,8 @@ nodes to the DOM for the browser to keep track of.
 "123".split("/(\d+)/");
 ⬅︎ ▶︎ Array(3) [ "", "123", "" ]
 ```
+
+#### The nodes array
 
 I'm going to work all that whole logic into one step
 and call the resulting array of nodes, “nodes”:
@@ -359,6 +395,8 @@ function nodeWalker(node) {
   }
 }
 ```
+
+#### Create a document fragment to contain our nodes
 
 Now, we just have to replace the current node with the nodes
 stored in our “nodes” array.
@@ -396,6 +434,8 @@ Also note that the `wrapIsoString` function takes two parameters:
 a `isoString` and a `transformer` function.
 The `transformer` function we’re calling here is the one
 we wrote earlier called `localDateString`.
+
+### Our first run
 
 At this point, our implementation should be functional.
 Let’s try it out:
