@@ -296,9 +296,8 @@ Add two guard clauses:
 ```javascript
 function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
-  const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[:.T\d]*Z)/);
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re);
     if (child.nodeType !== Node.TEXT_NODE) continue;
   }
 }
@@ -388,12 +387,12 @@ and call the resulting array of nodes, “nodes”:
 function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re);
     if (child.nodeType !== Node.TEXT_NODE) continue;
     const nodes = child.textContent
-      .split(iso8601)
+      .split(re)
       .map((segment) => {
-        return iso8601.test(segment)
+        return re.test(segment)
           ? wrapIsoString(segment, localIso8601String)
           : document.createTextNode(segment);
       })
@@ -406,7 +405,7 @@ function nodeWalker(node, re) {
 
 Now, we just have to replace the current node with the nodes
 stored in our “nodes” array.
-The `replaceWith()` method does not accept an array of nodes,
+The `replaceWith` method does not accept an array of nodes,
 but it does accept a document fragment object.
 So, we’ll create a document fragment object,
 populate it with the nodes, and
@@ -416,12 +415,12 @@ then replace the child with the resulting document fragment:
 function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re);
     if (child.nodeType !== Node.TEXT_NODE) continue;
     const nodes = child.textContent
-      .split(iso8601)
+      .split(re)
       .map((segment) => {
-        return iso8601.test(segment)
+        return re.test(segment)
           ? wrapIsoString(segment, localDateString)
           : document.createTextNode(segment);
       })
@@ -433,7 +432,7 @@ function nodeWalker(node, re) {
 }
 ```
 
-Note that the the "true” fork of the `map` lambda calls
+Note that the the “true” fork of the `map` lambda calls
 the `wrapIsoString` function that we wrote earlier.
 Also note that the `wrapIsoString` function takes two parameters:
 a `isoString` and a `transformer` function.
