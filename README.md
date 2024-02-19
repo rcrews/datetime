@@ -1,14 +1,14 @@
 # Foo
 
 This article describes a strategy for clarifying meaning when displaying
-times and dates on web pages. Confusion comes primarily thorough
-omitting the time zone or using an ambiguous day and month digit order.
+times and dates on web pages. Confusion comes from
+omitting the time zone and when using an ambiguous digit order for the
+day and month.
 This article describes
 
 * Changing web pages after they are loaded,
 * Using the DOM to manipulate text not delineated by mark-up, and
 * Representing times and dates in web pages.
-
 
 Imagine you’re looking at a web page presenting an activity log:
 
@@ -33,35 +33,35 @@ audience is global. Here’s the strategy we’re going to use:
 
 ## The back-end dev
 
-The backend dev uses the available tool to write the time stamps:
+The backend dev writes compact ISO 8601 time stamps in
 
-In Ruby:
+Ruby:
 
 ```ruby
 Time.now.utc.strftime("%FT%TZ")
 ```
 
-In Python:
+Python:
 
 ```python
 import datetime
 f"{datetime.datetime.utcnow().isoformat()}Z"
 ```
 
-In Java:
+Java:
 
 ```java
 import java.time.*
 LocalDateTime.now(ZoneOffset.UTC) + "Z"
 ```
 
-In JavaScript:
+JavaScript:
 
 ```javascript
 new Date().toISOString()
 ```
 
-The delivered HTML looks something like this:
+and delivers HTML that looks something like this:
 
     <pre>
     2024-02-09T04:03:14Z - Sweep drive
@@ -71,15 +71,15 @@ The delivered HTML looks something like this:
 
 ## The front-end dev
 
-The front-end dev will write JavaScript to scan the page text
-for these date stamps and then replace them with an unambiguous
-format for the local reader.
+As front-end devs, we will write JavaScript that scans the page text
+for these date stamps, and then replaces them with an unambiguous
+format customized and optimized for each site visitor.
 
 ### Add an event listener
 
-The front-end dev starts by adding a function to the page onload
-handler so the function `localizeIsoStrings(event)` runs
-when the page loads.
+We start by inventing a name for the starting point of our
+solution, `localizeIsoStrings`, and adding it to the page onload
+handler so it runs when the page loads.
 
 ```javascript
 function localizeIsoStrings(event) {
@@ -91,13 +91,13 @@ window.addEventListener("load", localizeIsoStrings);
 ### Plan the mark-up
 
 We might grumble at the back-end dev for not wrapping
-each date stamp in a span to make each one easy to locate.
-But we’ll roll with it. We know that
+each date stamp in a `span` to make each one easy to locate,
+but we’ll roll with it. We know that
 special items on the page need to be identified with
-semantic mark-up for both accessibility and presentation.
-Since this whole project is about date stamps, it is clearly
-special, and when we’re done with it we will have each
-date stamp properly wrapped in a span element like this:
+semantic mark-up for both presentation and accessibility.
+Since this whole project is about date stamps, date stamps are clearly
+the special thing here. When we’re done, we'll have each
+date stamp properly wrapped in a HTML `span` element like this:
 
 ```html
 <span
@@ -108,7 +108,7 @@ date stamp properly wrapped in a span element like this:
 
 ### Implement the mark-up plan
 
-Here’s a function that returns the structure:
+Here’s a function that returns our desired `span` mark-up:
 
 ```javascript
 function wrapIsoString(isoString, transformer) {
@@ -121,18 +121,18 @@ function wrapIsoString(isoString, transformer) {
 }
 ```
 
-This function
+The function
 
 * Creates a `span` element.
 * Adds a `class` attribute with two classes: one a generic “date” and one
   specific to the project, “localize-iso8601-string“.
 * Adds a `title` attribute with its value set to the original datetime
-  format. In most modern browsers, readers who hold the mouse cursor over
-  an element with a title attribute for about three seconds will see the
-  content of the title attribute appear in a pop-up box.
-* Calls for the localized version and adds the localized version into
+  format. In modern browsers, readers who hold their mouse pointer over
+  an element with a title attribute for about two seconds will see the
+  content of the title attribute appear in a pop-up.
+* Calls for a localized date stamp and adds it into
   the element’s text content, which will be immediately visible to
-  readers.
+  visitors.
 * Returns the `span` element.
 
 ### Transformation, first version
@@ -144,7 +144,7 @@ new Date("2024-02-08T20:03:14Z").toLocaleString();
 ⬅︎ "2/8/2024, 12:03:14 PM"
 ```
 
-Wrap it in a function so we can reference it in our program:
+Then wrap that in a function so we can reference it in our program:
 
 ```javascript
 function localDateString(dateTime) {
@@ -154,20 +154,22 @@ function localDateString(dateTime) {
 
 This function
 
-* Receives the datetime formatted string
+* Receives the datetime-formatted string
 * Parses it into a Date object
 * Creates a default localized string from the object
 * Returns the localized string
 
-Turns out this is not going to do exactly what we need.
-The local time zone, which is critical for our solution is missing.
-We’ll use it as a placeholder for now and improve it later.
+Turns out this is not going to be exactly what we need.
+The *time zone*, which is critical for our solution, is missing.
+We’ll use it as a placeholder, though, and improve it later.
 
-### Finding and testing datetimes with a regular expression
+### Using a regular expression to find datetimes
 
-Now, clearly, we’re going to be scanning text for a particular text
-pattern. This can be a problem because the text we’re going to be
-searching for can have an enourmous variety. Some
+Since our back-end dev did not identify the datestamps with mark-up,
+we’re going to be scanning text for a datetime
+pattern. Scanning text for patterns can be a problem because the text we’re
+hoping to match comes mixed among an enourmous variety of words
+and character constructions. Some
 people, when confronted with a problem, think “I know, I'll use regular
 expressions.” Which is exactly what we’re going to do:
 
@@ -185,39 +187,42 @@ This regular expression matches text that is
 * Any number of any of the following characters in any order
   * A colon
   * A decimal point
-  * A captital T
+  * A captital `T`
   * Any digit zero through 9
-* Followed ultimately by a capital Z 
+* Followed ultimately by a capital `Z` 
 
-The regular expression also uses parentheses (just inside the forward
-slashes that delineates the regular expression) to create a capture
-group. This capture group turns out to be essential for our purpose, and
-will become clear later on.
+The regular expression also uses parentheses——just inside the forward
+slashes that delineates the regular expression——to create a *capture
+group*. This capture group turns out to be essential for our purpose:
+Its utility will become clear later on.
 
 ### Find on page? It's not that simple
 
-Because I just now got a cold chill down my spine realizing that
-`querySelectorAll` does not have a polymorph that takes a regular
-expression.
-
 The document object model, which front-end devs use to explore
-and change HTML pages gives good access to
+and change HTML pages, gives good access to
 
 * HTML elements
 * HTML element attributes
 * HTML element text content
 
-The DOM does not have tools to exchange a portion of a text node
-with an element:
+The DOM, though, does not have tools to identify a phrase of
+text from within an element, nor, naturally,
+does it provide tools to replace that phrase with an
+element, such as, to our purpose, a `span` element.
 
+![Inserting a span creates a new node](nodes.jpg)
 
+The go-to function for locating page content, `querySelectorAll`,
+does not have a polymorph that accepts our
+regular expression, or anything of the sort.
+We'll need a different solution.
 
-### The driver function
+### Our driver function
 
-With trepidation, we return to the `localizeIsoStrings(event)` function.
-First, we know that we aren’t going to do anything with the event
-object that is passed. The JavaScript convention for identifying
-a parameter you have to receive, but that you are not going to use
+Returning to our `localizeIsoStrings(event)` function,
+we know that we aren’t going to do anything with the `event`
+object passed. The JavaScript convention for identifying
+parameters that you are required to receive, but that you are not going to use,
 is to prepend it with an underscore:
 
 ```javascript
@@ -225,73 +230,75 @@ function localizeIsoStrings(_event) {
 }
 ```
 
-Next we know we’re going to walk the DOM, which, as shown in
-the illustration, is a tree structure. Turns out, most browsers
-support a function called TreeWalker for, well, walking the DOM
-tree. Unfortunately, although TreeWalker makes is easy to
+Our strategy will be to visit each node in the DOM
+looking for text, and, when text is found, scanning the text
+for the phrase we're looking for.
+Once found, we'll change the text, wrap the new text
+into a `span` element, and replace the found text
+with our created `span` element.
+
+The DOM is a tree structure of nodes.
+The process of visiting each node is known
+as *walking the DOM*. Turns out, most browsers
+support a function called `TreeWalker` for doing this.
+Unfortunately, though `TreeWalker` makes is easy to
 retrieve content from various places in your page, it doesn’t
 have good support for changing those pieces when you find them.
+So we’ll roll our own walker.
 
 ### Walking the DOM
 
-So, we’ll roll our own walker. The typical pattern for this is
-to start with one element, get a list of its children, and process
+The typical pattern for visiting nodes in this fashion is
+to start with one node, get a list of its children, and then process
 each child in turn. If any child has children of its own, recurse
 into that child and so on till you run out of children.
 
-We know our function `localizeIsoStrings(event)`, then, is really
-just basically going to be one line: A call to a recursive
-function:
+Because we're going to resurse, our `localizeIsoStrings` function
+will merely start the walk by identifying the node to start from
+and the pattern to search for.
+We’ll insert our regular expression outside our
+recursion so we don’t waste time and memory
+creating and destroying objects with
+each iteration.
 
 ```javascript
-function nodeWalker(node) {
+function nodeWalker(node, re) {
 }
 
 function localizeIsoStrings(_event) {
-  nodeWalker(document.body);
-}
-```
-
-#### Add the first guard clause
-
-Since we’re looking for text nodes and since text nodes never have child
-nodes, we know when can skip all childless nodes: No text there.
-
-```javascript
-function nodeWalker(node) {
-  if (!node.hasChildNodes()) return;
-}
-```
-
-#### Add the regular expression, start the loop
-
-Next, we’ll set up our loop, and insert our regular expression
-before it——outside the loop——so we don’t waste time and memory
-creating and destroying the regular expression object with
-each iteration:
-
-```javascript
-function nodeWalker(node) {
-  if (!node.hasChildNodes()) return;
   const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[-:.T\d]*Z)/);
+  nodeWalker(document.body, iso8601);
+}
+```
+
+#### Add the first guard clause, start the loop
+
+Since we’re looking for text nodes, and since text nodes never have child
+nodes, we know we can skip childless nodes: No text there.
+Then we'll start our loop:
+
+```javascript
+function nodeWalker(node, re) {
+  if (!node.hasChildNodes()) return;
   for (const child of node.childNodes) {
   }
 }
 ```
 
-#### Add more guard clauses
+#### Add guard clauses in the loop
 
-And the first thing we want to do is to start another loop
-if the child is an element, which might itself contain text.
-Then we want to skip the rest of the loop if the current
-node is not, itself, a text node. Add two guard clauses:
+Within our loop, we want to start another iteration
+if the child is an element node, which might contain text,
+and then shortcut the loop if the current
+node is, itself, not a text node and therefore not interesting to us.
+Add two guard clauses:
 
 ```javascript
-function nodeWalker(node) {
+function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
   const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[:.T\d]*Z)/);
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
     if (child.nodeType !== Node.TEXT_NODE) continue;
   }
 }
@@ -299,8 +306,8 @@ function nodeWalker(node) {
 
 #### Process text nodes
 
-At this point, the child node is definitely a text node because, if it
-wasn’t, we’d have already left the loop. So we will get the text content
+At this point, we know our current child node is a text node. If it
+wasn’t, we’d have left the loop. So let's get the text content
 of the text node:
 
 ```javascript
@@ -378,11 +385,10 @@ I'm going to work all that whole logic into one step
 and call the resulting array of nodes, “nodes”:
 
 ```javascript
-function nodeWalker(node) {
+function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
-  const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[:.T\d]*Z)/);
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
     if (child.nodeType !== Node.TEXT_NODE) continue;
     const nodes = child.textContent
       .split(iso8601)
@@ -407,11 +413,10 @@ populate it with the nodes, and
 then replace the child with the resulting document fragment:
 
 ```javascript
-function nodeWalker(node) {
+function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
-  const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[:.T\d]*Z)/);
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
     if (child.nodeType !== Node.TEXT_NODE) continue;
     const nodes = child.textContent
       .split(iso8601)
