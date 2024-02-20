@@ -192,7 +192,7 @@ This regular expression matches text that is
 * Followed ultimately by a capital `Z` 
 
 The regular expression also uses parentheses——just inside the forward
-slashes that delineates the regular expression——to create a *capture
+slashes that delineate the regular expression——to create a *capture
 group*. This capture group turns out to be essential for our purpose:
 Its utility will become clear later on.
 
