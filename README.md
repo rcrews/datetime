@@ -307,7 +307,7 @@ function nodeWalker(node, re) {
 
 At this point, we know our current child node is a text node. If it
 wasn’t, we’d have left the loop. So let's get the text content
-of the text node:
+of the text node from its `textContent` property:
 
 ```javascript
 child.textContent
@@ -462,8 +462,13 @@ Let’s try it out:
 </html>
 ```
 
+![Localized dates, popup showing, no time zone](localized-dates.png)
 
+As expected: Localized time stamps with the mouse-over
+pop-up working, but no time zones so we'll return to our
+transformer function.
 
+### 
 
   * * *
 
