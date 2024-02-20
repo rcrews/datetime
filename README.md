@@ -318,7 +318,6 @@ child.textContent
 Now we split the string into an array of strings.
 We’ll split the string on the pattern of the datetime
 string that we’re looking for.
-
 The JavaScript split method takes either a string (or character) or
 a regular expression. In typical use, these separators are
 discarded:
@@ -380,7 +379,7 @@ nodes to the DOM for the browser to keep track of.
 
 #### The nodes array
 
-I'm going to work all that whole logic into one step
+We're going to work all that whole logic into one step
 and call the resulting array of nodes, “nodes”:
 
 ```javascript
@@ -403,13 +402,13 @@ function nodeWalker(node, re) {
 
 #### Create a document fragment to contain our nodes
 
-Now, we just have to replace the current node with the nodes
+Now we just have to replace the current node with the nodes
 stored in our “nodes” array.
 The `replaceWith` method does not accept an array of nodes,
 but it does accept a document fragment object.
-So, we’ll create a document fragment object,
+So, we’ll create a document fragment,
 populate it with the nodes, and
-then replace the child with the resulting document fragment:
+then replace our text node child with the resulting object:
 
 ```javascript
 function nodeWalker(node, re) {
