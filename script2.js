@@ -11,16 +11,15 @@ function wrapIsoString(isoString, transformer) {
   return span;
 }
 
-function nodeWalker(node) {
+function nodeWalker(node, re) {
   if (!node.hasChildNodes()) return;
-  const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[:.T\d]*Z)/);
   for (const child of node.childNodes) {
-    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child); // recurse
+    if (child.nodeType === Node.ELEMENT_NODE) nodeWalker(child, re); // recurse
     if (child.nodeType !== Node.TEXT_NODE) continue;
     const nodes = child.textContent
-      .split(iso8601)
+      .split(re)
       .map((segment) => {
-        return iso8601.test(segment)
+        return re.test(segment)
           ? wrapIsoString(segment, localDateString)
           : document.createTextNode(segment);
       })
@@ -32,7 +31,8 @@ function nodeWalker(node) {
 }
 
 function localizeIsoStrings(_event) {
-  nodeWalker(document.body);
+  const iso8601 = new RegExp(/(\d{4}-\d{2}-\d{2}[:.T\d]*Z)/);
+  nodeWalker(document.body, iso8601);
 }
 
 window.addEventListener("load", localizeIsoStrings);
