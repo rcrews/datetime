@@ -1,5 +1,9 @@
 function localDateString(dateTime) {
-  return new Date(dateTime).toLocaleString();
+  return Intl.DateTimeFormat(navigator.language, {
+    dateStyle: "medium",
+    timeStyle: "long",
+  }).format(new Date(dateTime))
+    .replace(" at", "");
 }
 
 function wrapIsoString(isoString, transformer) {
