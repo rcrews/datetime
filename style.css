@@ -28,3 +28,7 @@ th, td {
 tr:nth-child(even) {
   background-color: #eee;
 }
+
+.localize-iso8601-string {
+  white-space: nowrap;
+}
